@@ -1,0 +1,12 @@
+{
+  "repository": "https://github.com/Finderlzy/reality-setup",
+  "version": "v1.2.1",
+  "commit": "56a544def5985a80d31980037071ae59b745c5e5",
+  "license": "MIT",
+  "files": {
+    "setup.sh": "55c086b4a46dd89a405dbcade912f16159ed44213042ea96ee5b3b4f0b49b4ce",
+    "README.md": "f154624642e581e1f5d4a087bf922665d7a34b30068d690508fc55ca517a06e6",
+    "CHANGELOG.md": "09d80cc8d760d2f0632eb17579a51d06bf57e40bbe07d97eec1fa4b88c132fda",
+    "LICENSE": "c89a8986ca445300f8719fff6aa2c46f44eb9b3bd8a31e691a9285d668c2314e"
+  }
+}
