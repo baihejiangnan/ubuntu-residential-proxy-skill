@@ -1,6 +1,6 @@
 # Ubuntu 住宅代理运维 Skill
 
-给 Agent 使用的完整流程：从全新 Ubuntu VPS、本机 SSH 访问和已有住宅 SOCKS5 代理开始，部署 **VLESS + Reality / Hysteria2 双节点**，验证后交付可复制的节点链接与 Clash 配置。后续支持列出、添加、选择删除住宅分流域名。
+给 Agent 使用的完整流程：从全新 Ubuntu VPS、本机 SSH 访问和已有住宅 SOCKS5 代理开始，部署 **VLESS + Reality / Hysteria2 双节点**，验证后交付可复制的节点链接与 Clash 配置。后续支持住宅分流域名增删，以及**只更换住宅代理、保留全部路由规则和节点信息**。
 
 首次部署以配置交付结束，不主动发起域名选择问答。SSH 私钥只留在用户本机，由原生 OpenSSH 使用；首次密码在用户自己的终端输入。仓库不保存用户的服务器信息或代理凭据。
 
@@ -20,16 +20,24 @@ npx skills add baihejiangnan/ubuntu-residential-proxy-skill --skill ubuntu-resid
 
 后续可以说“列出走住宅出口的域名，让我选一个删除”或“把 https://example.com 加入住宅分流”。
 
+也可以说：
+
+```text
+使用 $ubuntu-residential-proxy，只更换住宅代理，保留现有路由规则。先测试新代理，通过后备份、替换并验证；失败时回滚。
+```
+
+更换工具先通过临时回环客户端测试新 SOCKS 连接和出口，失败不改现有配置；通过后再做受保护备份、持久化及节点验证，失败自动恢复。凭据通过文件传入，不进入命令行参数。完整流程见 [住宅代理替换](skills/ubuntu-residential-proxy/references/replace-proxy.md)。
+
 ## 服务器运行包
 
 Release 提供完整 Skill ZIP、服务器 TAR.GZ 以及 SHA-256 清单。根目录 `install.sh` 下载固定 release 并校验散列，再执行 Agent 安装适配器；输入是服务器上 root 所有、权限 600 的 JSON 文件。先按 Skill 完成 SSH 和输入准备，不把密码放到 shell 命令参数。
 
 ```bash
-curl -fL https://raw.githubusercontent.com/baihejiangnan/ubuntu-residential-proxy-skill/v0.1.0/install.sh -o /root/proxyops-install.sh
+curl -fL https://raw.githubusercontent.com/baihejiangnan/ubuntu-residential-proxy-skill/v0.2.0/install.sh -o /root/proxyops-install.sh
 bash /root/proxyops-install.sh --input /root/proxyops-input.json
 ```
 
-安装器只接受全新 Ubuntu。已有面板时拒绝运行；增删域名使用 `proxyctl.py`，不会重装。安装需联网获取 Ubuntu 软件包和上游 3x-ui/Xray，打包上游脚本不代表完全离线安装。两个节点通过服务器自测后，还需要用户网络验证外部可达性。
+安装器只接受全新 Ubuntu。已有面板时拒绝运行；增删域名使用 `proxyctl.py`，更换住宅代理使用 `replace_proxy.py`，都不会重装。安装需联网获取 Ubuntu 软件包和上游 3x-ui/Xray，打包上游脚本不代表完全离线安装。两个节点通过服务器自测后，还需要用户网络验证外部可达性。
 
 ## 上游来源与修改
 

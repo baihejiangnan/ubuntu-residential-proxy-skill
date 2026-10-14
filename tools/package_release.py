@@ -7,7 +7,7 @@ import tarfile
 import zipfile
 
 ROOT = Path(__file__).resolve().parents[1]
-VERSION = 'v0.1.0'
+VERSION = 'v0.2.0'
 NAME = 'ubuntu-residential-proxy'
 SKILL = ROOT / 'skills' / NAME
 

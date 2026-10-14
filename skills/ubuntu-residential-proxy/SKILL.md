@@ -1,6 +1,6 @@
 ---
 name: ubuntu-residential-proxy
-description: 为全新 Ubuntu VPS 配置本地 SSH 密钥登录、部署 Reality 与 Hysteria2 双节点及住宅 SOCKS 出口，导出客户端配置，并在后续请求中增删住宅分流域名或排查运行问题。
+description: 为全新 Ubuntu VPS 配置 SSH 密钥、部署 Reality 与 Hysteria2 双节点及住宅 SOCKS 出口并导出配置；后续支持增删分流域名、保留路由更换住宅代理、预检与备份回滚。
 ---
 
 # Ubuntu 住宅代理运维
@@ -11,6 +11,7 @@ description: 为全新 Ubuntu VPS 配置本地 SSH 密钥登录、部署 Reality
 
 - **首次部署**：读取 [references/deploy.md](references/deploy.md)，完成访问准备、全新服务器检查、安装、验证和交付。
 - **列出、添加、删除住宅分流域名**：读取 [references/routes.md](references/routes.md)，使用 `scripts/proxyctl.py` 操作面板保存的配置。
+- **只更换住宅代理、保留路由规则**：读取 [references/replace-proxy.md](references/replace-proxy.md)，使用 `scripts/replace_proxy.py` 预检并替换 `residential` 的连接信息，保留全部路由和节点信息。
 - **故障排查、再次导出、面板访问**：读取 [references/operations.md](references/operations.md)。从只读检查开始，根据结果采取任务范围内的修复。
 
 ## 共同约定
@@ -19,7 +20,7 @@ description: 为全新 Ubuntu VPS 配置本地 SSH 密钥登录、部署 Reality
 2. 首次密码和密钥口令让用户在原生本地终端输入。已有有效访问方式时不要求重复输入。代理凭据优先通过 `scripts/collect_credentials.py` 的本地交互收集；用户已明确提供的资料可直接用于其授权的服务器，不重复索取。
 3. 主机身份使用 `known_hosts` 校验；未知主机指纹在用户本地交互中核对或与云控制台提供的指纹核对。身份变更时停止诊断，不自动删记录或关闭校验。
 4. 上游快照位于 `vendor/reality-setup/`，来源和 SHA-256 见 [references/upstream.md](references/upstream.md)。部署使用 `scripts/install.py` 的 Agent 适配层。它拒绝已有面板、隐藏安装期间的敏感输出、使用随机面板密码，并要求双节点自测通过。**不得为添加域名重新运行安装器。**
-5. 配置变更前做受保护备份，使用面板 API 持久化，验证运行状态和实际效果。不要只改生成的 `/usr/local/x-ui/bin/config.json`。明确的部署/增删请求已授权相应操作；仅查看请求不得变更。删除选择有歧义时先列出供用户选择。
+5. 配置变更前做受保护备份，使用面板 API 持久化，验证运行状态和实际效果。不要只改生成的 `/usr/local/x-ui/bin/config.json`。明确的部署/增删/更换代理请求已授权相应操作；仅查看或仅测试请求不得改动正在使用的配置。删除选择有歧义时先列出供用户选择。
 6. 不把本文示例、之前其他用户的主机或住宅出口当成当前环境。服务器信息、凭据、备份、日志和真实导出文件都放运行目录，不能放发布仓库或 Skill 安装目录。
 
 ## 首次部署的完成条件

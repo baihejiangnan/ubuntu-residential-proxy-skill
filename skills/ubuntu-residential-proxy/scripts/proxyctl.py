@@ -1,6 +1,7 @@
 """Server-side residential route management; run with sudo python3."""
 import argparse
 import copy
+from contextlib import nullcontext
 import datetime
 import ipaddress
 import json
@@ -11,7 +12,7 @@ import sqlite3
 import subprocess
 import time
 import urllib.parse
-from common import Panel, protect, revision, write_private
+from common import Panel, maintenance_lock, protect, revision, write_private
 
 
 def normalize(value):
@@ -127,7 +128,7 @@ def backup(config, root=Path('/var/backups/ubuntu-residential-proxy'), database=
     return directory
 
 
-def verify_service(expected, runtime=Path('/usr/local/x-ui/bin/config.json')):
+def verify_service(expected, runtime=Path('/usr/local/x-ui/bin/config.json'), selftest=True):
     subprocess.run(['systemctl', 'is-active', '--quiet', 'x-ui'], check=True)
     actual = json.loads(Path(runtime).read_text())
     def effective(rules):
@@ -135,7 +136,8 @@ def verify_service(expected, runtime=Path('/usr/local/x-ui/bin/config.json')):
                 for rule in rules if rule.get('enabled') is not False]
     if effective(actual.get('routing', {}).get('rules', [])) != effective(expected.get('routing', {}).get('rules', [])):
         raise RuntimeError('Runtime routing differs from saved routing')
-    subprocess.run(['node-selftest'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
+    if selftest:
+        subprocess.run(['node-selftest'], check=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL, timeout=90)
 
 
 def apply_change(panel, old, new, verify_fn=verify_service, backup_fn=backup):
@@ -180,16 +182,17 @@ def main():
     if not hasattr(os, 'geteuid') or os.geteuid() != 0:
         parser.error('Run this server-side tool with sudo python3')
     panel = Panel.local()
-    old = panel.config()
-    if args.action == 'list':
-        print(json.dumps(listing(old), ensure_ascii=False, indent=2))
-        return
-    if revision(old) != args.expect_revision:
-        parser.error('Configuration revision changed; list again before applying the selected edit')
-    if not any(o.get('tag') == 'residential' for o in old.get('outbounds', [])):
-        parser.error('Missing residential outbound')
-    new = change(old, args.action, args.values, args.rule_index, getattr(args, 'create_rule', False))
-    print(json.dumps(apply_change(panel, old, new), ensure_ascii=False, indent=2))
+    with nullcontext() if args.action == 'list' else maintenance_lock():
+        old = panel.config()
+        if args.action == 'list':
+            print(json.dumps(listing(old), ensure_ascii=False, indent=2))
+            return
+        if revision(old) != args.expect_revision:
+            parser.error('Configuration revision changed; list again before applying the selected edit')
+        if not any(o.get('tag') == 'residential' for o in old.get('outbounds', [])):
+            parser.error('Missing residential outbound')
+        new = change(old, args.action, args.values, args.rule_index, getattr(args, 'create_rule', False))
+        print(json.dumps(apply_change(panel, old, new), ensure_ascii=False, indent=2))
 
 
 if __name__ == '__main__':

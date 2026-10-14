@@ -1,5 +1,6 @@
 """Shared standard-library helpers; never print credentials."""
 import hashlib
+from contextlib import contextmanager
 import json
 import os
 from pathlib import Path
@@ -7,6 +8,21 @@ import shlex
 import subprocess
 import urllib.parse
 import urllib.request
+
+
+@contextmanager
+def maintenance_lock():
+    """Serialize this skill's route and endpoint changes on the server."""
+    import fcntl
+    with open('/run/lock/ubuntu-residential-proxy.maintenance.lock', 'a') as stream:
+        try:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_EX | fcntl.LOCK_NB)
+        except BlockingIOError:
+            raise RuntimeError('Another maintenance change is running; retry after it completes') from None
+        try:
+            yield
+        finally:
+            fcntl.flock(stream.fileno(), fcntl.LOCK_UN)
 
 
 def protect(path, directory=False):
